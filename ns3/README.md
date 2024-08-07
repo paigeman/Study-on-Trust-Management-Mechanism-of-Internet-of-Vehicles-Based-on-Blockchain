@@ -4,4 +4,4 @@ The header files in the `include` directory include the header files in the src 
 
 It is recommended to add the path of lib directory to the `PATH` environment variable, or you can add it after encountering certain errors.
 
-Or you can just ignore these things, and follow the steps in issue #14.
+Or you can just ignore these things, and follow the steps in issue #14, then you can use files built by yourselves.
