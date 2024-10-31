@@ -314,3 +314,99 @@ The trace output may have some differences in terms of time.
 
 The `7` here are in a certain order, perhaps reflecting the time sequence in which the `NodeContainer` created the `Node` .
 
+Here are some attributes of `GridPositionAllocator` :
+
+![f22.png](resources/f22.png)
+
+![f23.png](resources/f23.png)
+
+![f24.png](resources/f24.png)
+
+You can also find these in the Doxygen documentation.
+
+Here is an attribute of `RandomWalk2dMobilityModel` :
+
+![f25.png](resources/f25.png)
+
+You can also find it in the Doxygen documentation too.
+
+### 8.2.1.1 Callbacks
+
+for
+
+```cpp
+int (*pfi)(int arg) = 0;
+```
+
+It can also be written as:
+
+```cpp
+int (*pfi)(int) = 0;
+```
+
+In C++, you can use function name as the address of function.
+
+### 8.2.1.2 Walkthrough: fourth.cc
+
+`ns3::TracedValueCallback::Int32` can be found in `src/core/model/traced-value.h` .
+
+For trace sink function `traceSink` , its signature is the same as the `typedef` `ns3::TracedValueCallback::Int32` .
+
+> that looks just like the pfi() example above to be called by the trace source.
+
+`pfi()` here has already been discussed in in `8.2.1.1 Callbacks` .
+
+> The declaration of the TracedValue<int32_t> m_myInt; in the Object itself performs the magic needed to provide the overloaded assignment operators that will use the operator() to actually invoke the Callback with the desired parameters. 
+
+Here the overloaded assignment operators of `TracedValue` will call `void Set(const T& v)` , in which will use the operator() to actually invoke the Callback with the desired parameters.
+
+![f26.png](resources/f26.png)
+
+![f27.png](resources/f27.png)
+
+![f28.png](resources/f28.png)
+
+```cpp
+myObject->m_myInt = 1234;
+```
+
+Code above will call `TracedValue(const T& v)` at first, then will call `operator=` .
+
+### 8.2.2 Connect with Config
+
+```cpp
+theObject->GetObject<MobilityModel>()->TraceConnectWithoutContext("CourseChange", MakeCallback(&CourseChange));
+```
+
+The code above is missing one parameter, the right code should be:
+
+```cpp
+theObject->GetObject<MobilityModel>()->TraceConnectWithoutContext("CourseChange", oss.str(), MakeCallback(&CourseChange));
+```
+
+`oss.str()` is a context.
+
+`Node` a subclass of an `ns3::Object` .
+
+```cpp
+void
+MobilityModel::NotifyCourseChange() const
+{
+  m_courseChangeTrace(this);
+}
+```
+
+`m_courseChangeTrace(this)` is calling `operator()` method rather than a constructor.
+
+### 8.2.5 Config Paths
+
+> Let’s assume that you have just found the “CourseChange” trace source in the “All TraceSources” list 
+
+You can find the `CourseChange` trace source in the `ns3::MobilityModel` part in the Doxygen documentation.
+
+![f29.png](resources/f29.png)
+
+> another way to find the Config path is to grep around in the ns-3 codebase for someone who has already figured it out
+
+The sentence above tells us to search for an existing solution in the code repository.
+
