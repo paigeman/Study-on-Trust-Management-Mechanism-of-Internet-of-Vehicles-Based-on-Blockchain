@@ -410,3 +410,187 @@ You can find the `CourseChange` trace source in the `ns3::MobilityModel` part in
 
 The sentence above tells us to search for an existing solution in the code repository.
 
+### 8.2.6 Callback Signatures
+
+```cpp
+typedef void (* CourseChangeCallback)(std::string context, Ptr<const MobilityModel> * model)
+```
+
+In the tutorial, the callback signature is given as above.
+
+However, when I reviewed the Doxygen documentation, I found that neither `MobilityModel` nor `RandomWalk2dMobilityModel` had the same callback signature as described in the tutorial.
+
+![f30.png](resources/f30.png)
+
+![f31.png](resources/f31.png)
+
+### 8.2.6.1 Implementation
+
+```cpp
+template<typename T1 = empty, typename T2 = empty,
+         typename T3 = empty, typename T4 = empty,
+         typename T5 = empty, typename T6 = empty,
+         typename T7 = empty, typename T8 = empty>
+class TracedCallback
+{
+}
+```
+
+`TracedCallback` is a templated class, however it looks like this:
+
+```cpp
+template <typename... Ts>
+class TracedCallback {}
+```
+
+It is a variadic templates.
+
+> you will be able to find that the file ./core/callback.h is the one we need to look at.
+
+You will be able to find that the file **./core/model/callback.h** is the one we need to look at.
+
+> which is exactly what we used in the third.cc example.
+
+Actually, the `CourseChange` method in `third.cc` does not have a `static` keyword.
+
+### 8.3.2 Finding Examples
+
+`src/test/ns3tcp/ns3tcp-cwnd-test-suite.cc` does not exist in the current version.
+
+### 8.3.4.2 The TutorialApp Application
+
+The socket using here is implemented by ns-3.
+
+```cpp
+if (m_socket)
+{
+  m_socket->Close();
+}
+```
+
+Here m_socket is a `Ptr` object. The `Ptr` class implement `operator bool()` method and contextual conversion is performed.
+
+See [Contextual conversions](https://en.cppreference.com/w/cpp/language/implicit_conversion#Contextual_conversions) for details.
+
+### 8.3.6.1 Walkthrough: sixth.cc
+
+> It turns out that this is a very simple object, but one that manages lifetime issues for the stream and solves a problem that even experienced C++ users run into. It turns out that the copy constructor for std::ostream is marked private.
+
+The copy constructor for `std::ostream` is marked `protected` in the C++ version currently used in ns-3.
+
+```cpp
+Ptr<PcapFileWrapper> file = pcapHelper.CreateFile("sixth.pcap",
+"w", PcapHelper::DLT_PPP);
+```
+
+The `CreateFile` method 's signature has changed to:
+
+```cpp
+Ptr<PcapFileWrapper> CreateFile(std::string filename,
+                                    std::ios::openmode filemode,
+                                    DataLinkType dataLinkType,
+                                    uint32_t snapLen = std::numeric_limits<uint32_t>::max(),
+                                    int32_t tzCorrection = 0);
+```
+
+> These are the same as the PCAP library data link types defined in bpf.h
+
+Unable to find in `bpf.h` document, but found in other files in the library `the-tcpdump-group/libpcap` .
+
+### 8.4.1.1 PCAP
+
+> All of the public methods inherited from class PcapUserHelperForDevice reduce
+
+Here the class name is `PcapHelperForDevice` rather than `PcapUserHelperForDevice` .
+
+### 8.4.1.1.1 Methods
+
+> You can enable PCAP tracing on the basis of Node ID and device ID as well as with explicit Ptr.
+
+This sentence should be understood with the method signature:
+
+```cpp
+void EnablePcap(std::string prefix, Ptr<NetDevice> nd, bool promiscuous = false, bool explicitFilename = false);
+```
+
+You can see a `Ptr` object.
+
+### 8.4.1.1.2 Filenames
+
+> By default, then, a PCAP trace file created as a result of enabling tracing on the first device of Node 21 using the prefix “prefix” would be prefix-21-1.pcap.
+
+The first device should be 0, shouldn't it?
+
+### 8.4.1.2.1 Methods
+
+> Note that since the user is completely specifying the file name, the string should include the ,tr suffix for consistency.
+
+should change to:
+
+> Note that since the user is completely specifying the file name, the string should include the .tr suffix for consistency.
+
+### 8.4.2.1 PCAP
+
+> Take a look at src/network/helper/trace-helper.h if you want to follow the discussion while looking at real code.
+
+should be:
+
+> Take a look at src/internet/helper/internet-trace-helper.h if you want to follow the discussion while looking at real code.
+
+> You can enable PCAP tracing on a particular node/net-device pair by providing a std::string representing an object name service string to an EnablePcap method.
+
+should be:
+
+> You can enable PCAP tracing on a particular protocol/interface pair by providing a std::string representing an object name service string to an EnablePcap method.
+
+### 8.4.2.2 ASCII
+
+> What this means to the user is that all device helpers in the system will have all of the ASCII trace methods available;
+
+should be:
+
+> What this means to the user is that all protocol helpers in the system will have all of the ASCII trace methods available;
+
+### 8.4.2.2.1 Methods
+
+> You are encouraged to peruse the API Documentation for class PcapAndAsciiHelperForIpv4 to find the details of these methods;
+
+The `PcapAndAsciiHelperForIpv4` does not even exist.
+
+> Note that since the user is completely specifying the file name, the string should include the “,tr” for consistency.
+
+`,tr` should change to `.tr` .
+
+### 9.2 Example Code
+
+```
+seventh-packet-byte-count-0.txt
+seventh-packet-byte-count-1.txt
+seventh-packet-byte-count.dat
+seventh-packet-byte-count.plt
+seventh-packet-byte-count.png
+seventh-packet-byte-count.sh
+```
+
+The `seventh-packet-byte-count.png` does not exist at first, you need to run the `seventh-packet-byte-count.sh` first.
+
+### 9.3 GnuplotHelper
+
+> When we examine this class implementation (src/internet/model/ipv6-l3-protocol.cc) we can observe
+
+l(letter)3 not 1(digit)3.
+
+```cpp
+.AddTraceSource("Tx", "Send IPv6 packet to outgoing interface.",
+                MakeTraceSourceAccessor(&Ipv6L3Protocol::m_txTrace))
+```
+
+The above code is missing a parameter. It should be:
+
+```cpp
+.AddTraceSource("Tx", "Send IPv6 packet to outgoing interface.",
+                  MakeTraceSourceAccessor(&Ipv6L3Protocol::m_txTrace),
+                  "ns3::Ipv6L3Protocol::TxRxTracedCallback")
+```
+
+
