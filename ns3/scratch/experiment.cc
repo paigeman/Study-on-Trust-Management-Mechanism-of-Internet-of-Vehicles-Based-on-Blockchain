@@ -21,11 +21,46 @@ CourseChange(std::ostream* os, std::string foo, Ptr<const MobilityModel> mobilit
         << "; VEL:" << vel.x << ", y=" << vel.y << ", z=" << vel.z << std::endl;
 }
 
+// 解析配置文件
+static void ParseConfigFile(const std::string &fileName, std::unordered_map<std::string, std::string> &configMap)
+{
+    std::ifstream file(fileName);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << fileName << std::endl;
+        return;
+    }
+    std::string line;
+    while (std::getline(file, line))
+    {
+        if (line.empty())
+        {
+            continue;
+        }
+        // 忽略注释
+        size_t pos_sharp = line.find_first_of('#');
+        if (pos_sharp != std::string::npos)
+        {
+            line = line.substr(0, pos_sharp);
+        }
+        // 去除行首和行尾的空白字符
+        while (!line.empty() && isblank(line[0]))
+        {
+            line.erase(0, 1); // Removes blank spaces at the beginning of the line
+        }
+        while (!line.empty() && isblank(line[line.size() - 1]))
+        {
+            line.erase(line.size() - 1, 1); // Removes blank spaces from at end of line
+        }
+
+    }
+}
+
 // Example to use ns2 traces file in ns3
 int
 main(int argc, char* argv[])
 {
     std::string traceFile;
+    std::string configFile;
 
     int nodeNum;
     double duration;
@@ -38,15 +73,17 @@ main(int argc, char* argv[])
     cmd.AddValue("traceFile", "Ns2 movement trace file", traceFile);
     cmd.AddValue("nodeNum", "Number of nodes", nodeNum);
     cmd.AddValue("duration", "Duration of Simulation", duration);
+    cmd.AddValue("configFile", "Configuration file", configFile);
     cmd.Parse(argc, argv);
 
     // Check command line arguments
-    if (traceFile.empty() || nodeNum <= 0 || duration <= 0)
+    if (traceFile.empty() || nodeNum <= 0 || duration <= 0 || configFile.empty())
     {
         std::cout << "Usage of " << argv[0]
                   << " :\n\n"
                      "./ns3 run \"ns2-mobility-trace"
                      " --traceFile=src/mobility/examples/default.ns_movements"
+                     " --configFile=/path/to/your/config"
                      " --nodeNum=2 --duration=100.0\" \n\n"
                      "NOTE: ns2-traces-file could be an absolute or relative path. You could use "
                      "the file default.ns_movements\n"
