@@ -51,11 +51,21 @@ static void ParseConfigFile(const std::string &fileName, std::unordered_map<std:
         {
             line.erase(line.size() - 1, 1); // Removes blank spaces from at end of line
         }
-
+        std::istringstream iss(line);
+        std::string keyword;
+        std::string key;
+        std::string value;
+        iss >> keyword;
+        // 如果不是set打头直接跳过
+        if (keyword != "set") {
+            continue;
+        }
+        iss >> key >> value;
+        configMap[key] = value;
     }
+    file.close();
 }
 
-// Example to use ns2 traces file in ns3
 int
 main(int argc, char* argv[])
 {
@@ -71,32 +81,31 @@ main(int argc, char* argv[])
     // Parse command line attribute
     CommandLine cmd(__FILE__);
     cmd.AddValue("traceFile", "Ns2 movement trace file", traceFile);
-    cmd.AddValue("nodeNum", "Number of nodes", nodeNum);
-    cmd.AddValue("duration", "Duration of Simulation", duration);
     cmd.AddValue("configFile", "Configuration file", configFile);
     cmd.Parse(argc, argv);
 
     // Check command line arguments
-    if (traceFile.empty() || nodeNum <= 0 || duration <= 0 || configFile.empty())
+    if (traceFile.empty() || configFile.empty())
     {
         std::cout << "Usage of " << argv[0]
                   << " :\n\n"
                      "./ns3 run \"ns2-mobility-trace"
                      " --traceFile=src/mobility/examples/default.ns_movements"
-                     " --configFile=/path/to/your/config"
-                     " --nodeNum=2 --duration=100.0\" \n\n"
+                     " --configFile=/path/to/your/config\" \n\n"
                      "NOTE: ns2-traces-file could be an absolute or relative path. You could use "
                      "the file default.ns_movements\n"
-                     "      included in the same directory of this example file.\n\n"
-                     "NOTE 1: Number of nodes present in the trace file must match with the "
-                     "command line argument and must\n"
-                     "        be a positive number. Note that you must know it before to be able "
-                     "to load it.\n\n"
-                     "NOTE 2: Duration must be a positive number. Note that you must know it "
-                     "before to be able to load it.\n\n";
+                     "      included in the same directory of this example file.\n\n";
 
         return 0;
     }
+
+    // 解析配置文件
+    std::unordered_map<std::string, std::string> configMap;
+    ParseConfigFile(configFile, configMap);
+    // 设置节点数量
+    nodeNum = std::stoi(configMap["opt(nn)"]);
+    // 设置duration
+    duration = std::stod(configMap["opt(stop)"]);
 
     // 生成日志名
     std::filesystem::path logFile = traceFile;
