@@ -73,6 +73,7 @@ main(int argc, char* argv[])
     std::string configFile;
 
     int nodeNum;
+    int rsuNum;
     double duration;
 
     // Enable logging from the ns2 helper
@@ -82,20 +83,23 @@ main(int argc, char* argv[])
     CommandLine cmd(__FILE__);
     cmd.AddValue("traceFile", "Ns2 movement trace file", traceFile);
     cmd.AddValue("configFile", "Configuration file", configFile);
+    cmd.AddValue("rsuNum", "Number of RSUs", rsuNum);
     cmd.Parse(argc, argv);
 
     // Check command line arguments
-    if (traceFile.empty() || configFile.empty())
+    if (traceFile.empty() || configFile.empty() || rsuNum <= 0)
     {
         std::cout << "Usage of " << argv[0]
                   << " :\n\n"
                      "./ns3 run \"ns2-mobility-trace"
                      " --traceFile=src/mobility/examples/default.ns_movements"
+                     " --rsuNum=2"
                      " --configFile=/path/to/your/config\" \n\n"
                      "NOTE: ns2-traces-file could be an absolute or relative path. You could use "
                      "the file default.ns_movements\n"
-                     "      included in the same directory of this example file.\n\n";
-
+                     "      included in the same directory of this example file.\n\n"
+                     "NOTE 1: Number of RSUs must\n"
+                     "        be a positive number.\n\n";
         return 0;
     }
 
@@ -123,9 +127,32 @@ main(int argc, char* argv[])
     Ns2MobilityHelper ns2 = Ns2MobilityHelper(traceFile);
 
     // Must add the following two lines code
-    // Create all nodes.
+    // Create all vehicle nodes.
     NodeContainer stas;
     stas.Create(nodeNum);
+    // 创建RSU节点
+    NodeContainer rsuNodes;
+    rsuNodes.Create(rsuNum);
+    // 配置RSU的移动模型
+    double minX = std::stod(configMap["opt(min-x)"]);
+    double minY = std::stod(configMap["opt(min-y)"]);
+    double maxX = std::stod(configMap["opt(x)"]);
+    double maxY = std::stod(configMap["opt(y)"]);
+    double width = maxX - minX;
+    double height = maxY - minY;
+    // ratio 可以使网格布局按区域比例调整
+    double ratio = width / height;
+    auto gridWidth = static_cast<uint32_t>(std::ceil(std::sqrt(rsuNum * ratio)));
+    MobilityHelper mobility;
+    mobility.SetPositionAllocator("ns3::GridPositionAllocator",
+        "MinX", ,
+        "MinY", ,
+        "DeltaX", ,
+        "DeltaY", ,
+        "GridWidth", UintegerValue(gridWidth),
+        "LayoutType", StringValue("RowFirst"));
+    // RSU的mobility model配置为静态的
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 
     ns2.Install(); // configure movements for each node, while reading trace file
 
