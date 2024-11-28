@@ -142,15 +142,30 @@ main(int argc, char* argv[])
     double height = maxY - minY;
     // ratio 可以使网格布局按区域比例调整
     double ratio = width / height;
+    // gridWidth 有几列
     auto gridWidth = static_cast<uint32_t>(std::ceil(std::sqrt(rsuNum * ratio)));
+    // gridHeight 有几行
+    auto gridHeight = static_cast<uint32_t>(std::ceil(static_cast<double>(rsuNum) / gridWidth));
+    double deltaX = width / gridWidth;
+    double deltaY = height / gridHeight;
+    // 自定义位置分配器，确保每个 RSU 位于其小矩形中心，如此一辆车只要位于一个区域内，它只能与
+    Ptr<ListPositionAllocator> positionAllocator = CreateObject<ListPositionAllocator>();
+    bool stop = false;
+    for (int i = 0; i < gridHeight && !stop; ++i)
+    {
+        for (int j = 0; j < gridWidth; ++j)
+        {
+            if (i * gridWidth + j >= rsuNum)
+            {
+                stop = true;
+                break;
+            }
+            double posX = minX + deltaX * (j + 0.5);
+            double posY = minY + deltaY * (i + 0.5);
+            positionAllocator->Add(Vector(posX, posY, 0.0));
+        }
+    }
     MobilityHelper mobility;
-    mobility.SetPositionAllocator("ns3::GridPositionAllocator",
-        "MinX", ,
-        "MinY", ,
-        "DeltaX", ,
-        "DeltaY", ,
-        "GridWidth", UintegerValue(gridWidth),
-        "LayoutType", StringValue("RowFirst"));
     // RSU的mobility model配置为静态的
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
 
