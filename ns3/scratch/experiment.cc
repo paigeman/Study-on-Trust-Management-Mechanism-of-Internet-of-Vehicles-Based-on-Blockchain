@@ -146,9 +146,7 @@ main(int argc, char* argv[])
     // Create all vehicle nodes.
     NodeContainer stas;
     stas.Create(nodeNum);
-    // 创建RSU节点
-    NodeContainer rsuNodes;
-    rsuNodes.Create(rsuNum);
+
     // 配置RSU的移动模型
     double minX = std::stod(configMap["opt(min-x)"]);
     double minY = std::stod(configMap["opt(min-y)"]);
@@ -164,21 +162,21 @@ main(int argc, char* argv[])
     auto gridWidth = static_cast<uint32_t>(std::ceil(std::sqrt(rsuNum * ratio)));
     // gridHeight 有几行
     auto gridHeight = static_cast<uint32_t>(std::ceil(static_cast<double>(rsuNum) / gridWidth));
+    // 根据用户提供的RSU数重新计算RSU数
+    rsuNum = gridWidth * gridHeight;
+    // 创建RSU节点
+    NodeContainer rsuNodes;
+    rsuNodes.Create(rsuNum);
+
     double deltaX = width / gridWidth;
     double deltaY = height / gridHeight;
 
     // 自定义位置分配器，确保每个 RSU 位于其小矩形中心，如此一辆车只要位于一个区域内，它只能与该区域内的RSU进行交互
     Ptr<ListPositionAllocator> positionAllocator = CreateObject<ListPositionAllocator>();
-    bool stop = false;
-    for (size_t i = 0; i < gridHeight && !stop; ++i)
+    for (size_t i = 0; i < gridHeight; ++i)
     {
         for (size_t j = 0; j < gridWidth; ++j)
         {
-            if (i * gridWidth + j >= static_cast<uint32_t>(rsuNum))
-            {
-                stop = true;
-                break;
-            }
             double posX = minX + deltaX * (j + 0.5);
             double posY = minY + deltaY * (i + 0.5);
             positionAllocator->Add(Vector(posX, posY, 0.0));
