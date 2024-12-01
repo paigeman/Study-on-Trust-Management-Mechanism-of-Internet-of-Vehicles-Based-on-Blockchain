@@ -7,10 +7,13 @@
 
 using namespace ns3;
 
+NS_LOG_COMPONENT_DEFINE ("experiment");
+
 static void
 CourseChange(std::ostream* os, std::string foo, Ptr<const MobilityModel> mobility)
 {
     // 在输出要使用的信息之前，会有一批红色的信息输出，这些红色的信息是在ns2.Install()之后生成的
+    // 注释掉LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_DEBUG);即可去除红色输出
     Vector pos = mobility->GetPosition(); // Get position
     Vector vel = mobility->GetVelocity(); // Get velocity
 
@@ -66,18 +69,31 @@ static void ParseConfigFile(const std::string &fileName, std::unordered_map<std:
     file.close();
 }
 
+// OutputRsuLocation 输出RSU位置
+static void OutputRsuLocation(const NodeContainer & rsuNodes)
+{
+    for (uint32_t i = 0; i < rsuNodes.GetN(); ++i)
+    {
+        Ptr<MobilityModel> mobility = rsuNodes.Get(i)->GetObject<MobilityModel>();
+        const Vector pos = mobility->GetPosition();
+        std::ostringstream oss;
+        oss << "RSU " << i << " position: (" << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
+        NS_LOG_DEBUG(oss.str());
+    }
+}
+
 int
 main(int argc, char* argv[])
 {
     std::string traceFile;
     std::string configFile;
 
-    int nodeNum;
+    uint32_t nodeNum;
     int rsuNum;
     double duration;
 
     // Enable logging from the ns2 helper
-    LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_DEBUG);
+    // LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_DEBUG);
 
     // Parse command line attribute
     CommandLine cmd(__FILE__);
@@ -124,7 +140,7 @@ main(int argc, char* argv[])
     os.open(logFile);
 
     // Create Ns2MobilityHelper with the specified trace log file as parameter
-    Ns2MobilityHelper ns2 = Ns2MobilityHelper(traceFile);
+    auto ns2 = Ns2MobilityHelper(traceFile);
 
     // Must add the following two lines code
     // Create all vehicle nodes.
@@ -140,6 +156,8 @@ main(int argc, char* argv[])
     double maxY = std::stod(configMap["opt(y)"]);
     double width = maxX - minX;
     double height = maxY - minY;
+
+    // 这一块可以替换其它方案
     // ratio 可以使网格布局按区域比例调整
     double ratio = width / height;
     // gridWidth 有几列
@@ -148,14 +166,15 @@ main(int argc, char* argv[])
     auto gridHeight = static_cast<uint32_t>(std::ceil(static_cast<double>(rsuNum) / gridWidth));
     double deltaX = width / gridWidth;
     double deltaY = height / gridHeight;
-    // 自定义位置分配器，确保每个 RSU 位于其小矩形中心，如此一辆车只要位于一个区域内，它只能与
+
+    // 自定义位置分配器，确保每个 RSU 位于其小矩形中心，如此一辆车只要位于一个区域内，它只能与该区域内的RSU进行交互
     Ptr<ListPositionAllocator> positionAllocator = CreateObject<ListPositionAllocator>();
     bool stop = false;
-    for (int i = 0; i < gridHeight && !stop; ++i)
+    for (size_t i = 0; i < gridHeight && !stop; ++i)
     {
-        for (int j = 0; j < gridWidth; ++j)
+        for (size_t j = 0; j < gridWidth; ++j)
         {
-            if (i * gridWidth + j >= rsuNum)
+            if (i * gridWidth + j >= static_cast<uint32_t>(rsuNum))
             {
                 stop = true;
                 break;
@@ -166,8 +185,11 @@ main(int argc, char* argv[])
         }
     }
     MobilityHelper mobility;
+    mobility.SetPositionAllocator(positionAllocator);
     // RSU的mobility model配置为静态的
     mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    mobility.Install(rsuNodes);
+    OutputRsuLocation(rsuNodes);
 
     ns2.Install(); // configure movements for each node, while reading trace file
 
