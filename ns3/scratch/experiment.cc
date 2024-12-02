@@ -2,6 +2,8 @@
 #include "ns3/mobility-module.h"
 #include "ns3/ns2-mobility-helper.h"
 #include "filesystem"
+#include "ns3/yans-wifi-helper.h"
+#include "ns3/internet-module.h"
 
 #include <iostream>
 
@@ -82,6 +84,14 @@ static void OutputRsuLocation(const NodeContainer & rsuNodes)
     }
 }
 
+// 获取子网掩码
+static uint32_t getMask(uint32_t num)
+{
+    // +2 for network and broadcast addresses
+    const auto subnetSize = static_cast<uint32_t>(std::ceil(std::log2(num + 2)));
+    return (0xFFFFFFFF << subnetSize) & 0xFFFFFFFF;
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -155,33 +165,45 @@ main(int argc, char* argv[])
     double width = maxX - minX;
     double height = maxY - minY;
 
-    // 这一块可以替换其它方案
-    // ratio 可以使网格布局按区域比例调整
-    double ratio = width / height;
-    // gridWidth 有几列
-    auto gridWidth = static_cast<uint32_t>(std::ceil(std::sqrt(rsuNum * ratio)));
-    // gridHeight 有几行
-    auto gridHeight = static_cast<uint32_t>(std::ceil(static_cast<double>(rsuNum) / gridWidth));
-    // 根据用户提供的RSU数重新计算RSU数
-    rsuNum = gridWidth * gridHeight;
+    // // 这一块可以替换其它方案
+    // // ratio 可以使网格布局按区域比例调整
+    // double ratio = width / height;
+    // // gridWidth 有几列
+    // auto gridWidth = static_cast<uint32_t>(std::ceil(std::sqrt(rsuNum * ratio)));
+    // // gridHeight 有几行
+    // auto gridHeight = static_cast<uint32_t>(std::ceil(static_cast<double>(rsuNum) / gridWidth));
+    // // 根据用户提供的RSU数重新计算RSU数
+    // rsuNum = gridWidth * gridHeight;
+    // // 创建RSU节点
+    // NodeContainer rsuNodes;
+    // rsuNodes.Create(rsuNum);
+    //
+    // double deltaX = width / gridWidth;
+    // double deltaY = height / gridHeight;
+    //
+    // // 自定义位置分配器，确保每个 RSU 位于其小矩形中心，如此一辆车只要位于一个区域内，它只能与该区域内的RSU进行交互
+    // Ptr<ListPositionAllocator> positionAllocator = CreateObject<ListPositionAllocator>();
+    // for (size_t i = 0; i < gridHeight; ++i)
+    // {
+    //     for (size_t j = 0; j < gridWidth; ++j)
+    //     {
+    //         double posX = minX + deltaX * (j + 0.5);
+    //         double posY = minY + deltaY * (i + 0.5);
+    //         positionAllocator->Add(Vector(posX, posY, 0.0));
+    //     }
+    // }
+
+    // 最简单的实现，只有一个RSU，部署在区域的中心
     // 创建RSU节点
     NodeContainer rsuNodes;
+    rsuNum = 1;
     rsuNodes.Create(rsuNum);
-
-    double deltaX = width / gridWidth;
-    double deltaY = height / gridHeight;
-
-    // 自定义位置分配器，确保每个 RSU 位于其小矩形中心，如此一辆车只要位于一个区域内，它只能与该区域内的RSU进行交互
+    // 自定义位置分配器，把RSU放至区域的中心
     Ptr<ListPositionAllocator> positionAllocator = CreateObject<ListPositionAllocator>();
-    for (size_t i = 0; i < gridHeight; ++i)
-    {
-        for (size_t j = 0; j < gridWidth; ++j)
-        {
-            double posX = minX + deltaX * (j + 0.5);
-            double posY = minY + deltaY * (i + 0.5);
-            positionAllocator->Add(Vector(posX, posY, 0.0));
-        }
-    }
+    double posX = minX + width / 2;
+    double posY = minY + height / 2;
+    positionAllocator->Add(Vector(posX, posY, 0.0));
+
     MobilityHelper mobility;
     mobility.SetPositionAllocator(positionAllocator);
     // RSU的mobility model配置为静态的
@@ -190,6 +212,29 @@ main(int argc, char* argv[])
     OutputRsuLocation(rsuNodes);
 
     ns2.Install(); // configure movements for each node, while reading trace file
+
+    // 配置协议
+    // 信道和物理层
+    YansWifiChannelHelper channel = YansWifiChannelHelper::Default();
+    YansWifiPhyHelper phy;
+    phy.SetChannel(channel.Create());
+    // 数据链路层
+    WifiMacHelper mac;
+    WifiHelper wifi;
+    NetDeviceContainer vehicleDevices = wifi.Install(phy, mac, stas);
+    NetDeviceContainer rsuDevices = wifi.Install(phy, mac, rsuNodes);
+    // 网络层
+    InternetStackHelper stack;
+    stack.Install(stas);
+    stack.Install(rsuNodes);
+    // 分配IP地址 一般来说够了
+    Ipv4AddressHelper address;
+    Ipv4Mask maskObj(getMask(nodeNum + static_cast<uint32_t>(rsuNum)));
+    Ipv4Address baseIp("10.1.1.0");
+    Ipv4Address network(baseIp.Get() & maskObj.Get());
+    address.SetBase(network, maskObj);
+    address.Assign(vehicleDevices);
+    address.Assign(rsuDevices);
 
     // Configure callback for logging
     Config::Connect("/NodeList/*/$ns3::MobilityModel/CourseChange",
