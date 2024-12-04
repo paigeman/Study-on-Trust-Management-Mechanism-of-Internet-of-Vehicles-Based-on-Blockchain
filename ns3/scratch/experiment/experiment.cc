@@ -4,6 +4,7 @@
 #include "filesystem"
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/internet-module.h"
+#include "event-message.h"
 
 #include <iostream>
 
@@ -16,8 +17,8 @@ CourseChange(std::ostream* os, std::string foo, Ptr<const MobilityModel> mobilit
 {
     // 在输出要使用的信息之前，会有一批红色的信息输出，这些红色的信息是在ns2.Install()之后生成的
     // 注释掉LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_DEBUG);即可去除红色输出
-    Vector pos = mobility->GetPosition(); // Get position
-    Vector vel = mobility->GetVelocity(); // Get velocity
+    const Vector pos = mobility->GetPosition(); // Get position
+    const Vector vel = mobility->GetVelocity(); // Get velocity
 
     // Prints position and velocities
     std::cout << Simulator::Now() << " POS: x=" << pos.x << ", y=" << pos.y << ", z=" << pos.z
@@ -235,6 +236,7 @@ main(int argc, char* argv[])
     address.SetBase(network, maskObj);
     address.Assign(vehicleDevices);
     address.Assign(rsuDevices);
+    Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
     // Configure callback for logging
     Config::Connect("/NodeList/*/$ns3::MobilityModel/CourseChange",
