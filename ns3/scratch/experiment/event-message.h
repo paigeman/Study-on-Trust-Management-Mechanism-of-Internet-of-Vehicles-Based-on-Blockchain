@@ -6,10 +6,11 @@
 #define EVENT_MESSAGE_H
 #include "ns3/header.h"
 #include "ns3/vector.h"
-#include "ns3/timer.h"
+#include "ns3/nstime.h"
 
 namespace ns3 {
 
+// 事件消息
 class EventMessage : public Header {
   // 消息编号
   uint32_t m_messageId;

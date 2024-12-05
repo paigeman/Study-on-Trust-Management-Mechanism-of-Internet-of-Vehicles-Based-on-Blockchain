@@ -5,6 +5,9 @@
 #include "ns3/yans-wifi-helper.h"
 #include "ns3/internet-module.h"
 #include "event-message.h"
+#include "random-event.h"
+#include "event-generator.h"
+#include "event-manager.h"
 
 #include <iostream>
 
