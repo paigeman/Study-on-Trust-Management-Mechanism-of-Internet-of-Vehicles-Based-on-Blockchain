@@ -5,6 +5,8 @@
 #ifndef EVENT_GENERATOR_H
 #define EVENT_GENERATOR_H
 #include "ns3/application.h"
+#include "event-manager.h"
+
 namespace ns3
 {
 class EventGenerator : public Application
@@ -14,7 +16,9 @@ class EventGenerator : public Application
   double m_yMin;
   double m_xMax;
   double m_yMax;
-  // 事件管理器
+  // 每秒生成的事件数量
+  uint32_t m_maxEventsPerSecond;
+  //
 };
 }
 #endif //EVENT_GENERATOR_H
