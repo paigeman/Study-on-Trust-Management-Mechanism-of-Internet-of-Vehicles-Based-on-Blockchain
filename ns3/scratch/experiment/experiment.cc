@@ -1,15 +1,15 @@
-#include "ns3/core-module.h"
-#include "ns3/mobility-module.h"
-#include "ns3/ns2-mobility-helper.h"
-#include "filesystem"
-#include "ns3/yans-wifi-helper.h"
-#include "ns3/internet-module.h"
-#include "event-message.h"
-#include "random-event.h"
 #include "event-generator.h"
 #include "event-manager.h"
+#include "event-message.h"
+#include "filesystem"
 
-#include <iostream>
+#include "ns3/core-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/mobility-module.h"
+#include "ns3/ns2-mobility-helper.h"
+#include "ns3/yans-wifi-helper.h"
+
+#include <sstream>
 
 using namespace ns3;
 
@@ -24,8 +24,10 @@ CourseChange(std::ostream* os, std::string foo, Ptr<const MobilityModel> mobilit
     const Vector vel = mobility->GetVelocity(); // Get velocity
 
     // Prints position and velocities
-    std::cout << Simulator::Now() << " POS: x=" << pos.x << ", y=" << pos.y << ", z=" << pos.z
-        << "; VEL:" << vel.x << ", y=" << vel.y << ", z=" << vel.z << std::endl;
+    std::ostringstream oss;
+    oss << Simulator::Now() << " POS: x=" << pos.x << ", y=" << pos.y << ", z=" << pos.z
+        << "; VEL:" << vel.x << ", y=" << vel.y << ", z=" << vel.z;
+    NS_LOG_DEBUG(oss.str());
     *os << Simulator::Now() << " POS: x=" << pos.x << ", y=" << pos.y << ", z=" << pos.z
         << "; VEL:" << vel.x << ", y=" << vel.y << ", z=" << vel.z << std::endl;
 }
@@ -105,6 +107,7 @@ main(int argc, char* argv[])
     uint32_t nodeNum;
     int rsuNum;
     double duration;
+    double start;
 
     // Enable logging from the ns2 helper
     // LogComponentEnable("Ns2MobilityHelper", LOG_LEVEL_DEBUG);
@@ -138,6 +141,8 @@ main(int argc, char* argv[])
     ParseConfigFile(configFile, configMap);
     // 设置节点数量
     nodeNum = std::stoi(configMap["opt(nn)"]);
+    // 开始时间
+    start = std::stod(configMap["opt(start)"]);
     // 设置duration
     duration = std::stod(configMap["opt(stop)"]);
 
@@ -244,6 +249,14 @@ main(int argc, char* argv[])
     // Configure callback for logging
     Config::Connect("/NodeList/*/$ns3::MobilityModel/CourseChange",
                     MakeBoundCallback(&CourseChange, &os));
+
+    // 事件生成器应用
+    Ptr<Node> eventGeneratorNode = CreateObject<Node>();
+    Ptr<EventGenerator> eventGenerator = CreateObject<EventGenerator>(minX, minY,
+        maxX, maxY, 5, Seconds(1));
+    eventGeneratorNode->AddApplication(eventGenerator);
+    eventGenerator->SetStartTime(Seconds(start));
+    eventGenerator->SetStopTime(Seconds(duration));
 
     Simulator::Stop(Seconds(duration));
     Simulator::Run();

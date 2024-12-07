@@ -12,15 +12,16 @@ namespace ns3
 
 class EventManager
 {
-  std::vector<Ptr<RandomEvent>> m_events;
+  std::vector<RandomEvent> m_events;
+public:
+  void AddEvent(const RandomEvent& event);
+  EventManager();
+  uint64_t GetEventNumber() const;
+  RandomEvent GetRandomEventById(uint32_t id) const;
   static EventManager& GetInstance() {
     static EventManager instance;
     return instance;
   }
-public:
-  void AddEvent(const Ptr<RandomEvent>& event);
-  EventManager();
-  uint64_t GetEventNumber() const;
 };
 
 }

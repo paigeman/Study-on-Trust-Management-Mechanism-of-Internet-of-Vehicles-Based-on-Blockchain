@@ -8,7 +8,7 @@ using namespace ns3;
 TypeId
 EventMessage::GetTypeId()
 {
-    static TypeId tid = TypeId("ns3::EventMessage").SetParent<Header>().SetGroupName("Network");
+    static TypeId tid = TypeId("ns3::EventMessage").SetParent<Header>().SetGroupName("experiment");
     return tid;
 }
 

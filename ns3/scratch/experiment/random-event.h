@@ -23,13 +23,16 @@ class RandomEvent : public Header
   std::string m_description;
   // 事件真值
   bool m_trueValue;
+  // 持续时间
+  Time m_duration;
 public:
   // 构造器
   RandomEvent(uint32_t m_event_id,
                 const Vector& m_event_location,
                 const Time& m_timestamp,
                 const std::string& m_description,
-                bool m_true_value);
+                bool m_true_value,
+                const Time& m_duration);
   // getter and setter
   [[nodiscard]] uint32_t m_event_id() const
   {

@@ -8,7 +8,7 @@ using namespace ns3;
 TypeId
 RandomEvent::GetTypeId()
 {
-    static TypeId tid = TypeId("ns3::RandomEvent").SetParent<Header>().SetGroupName("Network");
+    static TypeId tid = TypeId("ns3::RandomEvent").SetParent<Header>().SetGroupName("experiment");
     return tid;
 }
 
@@ -25,7 +25,8 @@ uint32_t RandomEvent::GetSerializedSize() const
     // m_timestamp is 8 bytes
     // Size of the string length is 8 bytes
     // m_trueValue is 8 bytes 避免不同平台实现不同
-    return 4 + 8 * 3 + 8 + 8 + this->m_description.size() + 8;
+    // m_duration is 8 bytes
+    return 4 + 8 * 3 + 8 + 8 + this->m_description.size() + 8 + 8;
 }
 
 void
@@ -39,6 +40,7 @@ RandomEvent::Serialize(Buffer::Iterator start) const
     start.WriteHtonU64(this->m_description.size());
     start.Write(reinterpret_cast<const uint8_t *>(this->m_description.c_str()), this->m_description.size());
     start.WriteHtonU64(this->m_trueValue);
+    start.WriteHtonU64(static_cast<const uint64_t>((this->m_duration.GetNanoSeconds())));
 }
 
 uint32_t RandomEvent::Deserialize(Buffer::Iterator start)
@@ -53,11 +55,12 @@ uint32_t RandomEvent::Deserialize(Buffer::Iterator start)
     this->m_eventLocation.z = *reinterpret_cast<const double*>(&eventLocationZ);
     this->m_timestamp = NanoSeconds(i.ReadNtohU64());
     const uint64_t size = i.ReadNtohU64();
-    char buffer[size + 1];
+    auto buffer = new char[size + 1];
     i.Read(reinterpret_cast<uint8_t *>(buffer), size);
     buffer[size] = '\0';
     this->m_description = std::string(buffer);
     this->m_trueValue = static_cast<bool>(i.ReadNtohU64());
+    this->m_duration = NanoSeconds(i.ReadNtohU64());
     return i.GetDistanceFrom(start);
 }
 
@@ -67,16 +70,19 @@ void RandomEvent::Print(std::ostream& os) const
        << "EventLocation: " << this->m_eventLocation << "\n"
        << "Timestamp: " << this->m_timestamp << "\n"
        << "Description: " << this->m_description << "\n"
-       << "TrueValue: " << this->m_trueValue << "\n";
+       << "TrueValue: " << this->m_trueValue << "\n"
+       << "Duration: " << this->m_duration << "\n";
 }
 
 RandomEvent::RandomEvent(const uint32_t m_event_id,
                 const Vector& m_event_location,
                 const Time& m_timestamp,
                 const std::string& m_description,
-                const bool m_true_value)
+                const bool m_true_value,
+                const Time& m_duration)
         : m_eventId(m_event_id),
           m_eventLocation(m_event_location),
           m_timestamp(m_timestamp),
           m_description(m_description),
-          m_trueValue(m_true_value) {}
+          m_trueValue(m_true_value),
+          m_duration(m_duration) {}
