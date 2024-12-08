@@ -8,6 +8,8 @@
 #include "ns3/mobility-module.h"
 #include "ns3/ns2-mobility-helper.h"
 #include "ns3/yans-wifi-helper.h"
+#include "vehicle-app.h"
+#include "rsu-app.h"
 
 #include <sstream>
 

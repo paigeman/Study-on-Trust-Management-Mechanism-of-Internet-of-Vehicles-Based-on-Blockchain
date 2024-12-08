@@ -26,6 +26,8 @@ class EventGenerator : public Application
   Ptr<UniformRandomVariable> m_randomY;
   // 用于生成持续时间的随机变量
   Ptr<UniformRandomVariable> m_randomTime;
+  // 用于生成影响范围的随机变量
+  Ptr<UniformRandomVariable> m_randomRange;
   // 调度器事件的id
   EventId m_eventId;
   void StartApplication() override;

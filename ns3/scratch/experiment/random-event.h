@@ -25,6 +25,8 @@ class RandomEvent : public Header
   bool m_trueValue;
   // 持续时间
   Time m_duration;
+  // 影响范围
+  double m_influenceRange;
 public:
   // 构造器
   RandomEvent(uint32_t m_event_id,
@@ -32,7 +34,8 @@ public:
                 const Time& m_timestamp,
                 const std::string& m_description,
                 bool m_true_value,
-                const Time& m_duration);
+                const Time& m_duration,
+                double m_influenceRange);
   // getter and setter
   [[nodiscard]] uint32_t m_event_id() const
   {
@@ -73,6 +76,22 @@ public:
   void set_m_true_value(const bool m_true_value)
   {
     m_trueValue = m_true_value;
+  }
+  [[nodiscard]] Time m_duration1() const
+  {
+    return m_duration;
+  }
+  void set_m_duration(const Time& m_duration)
+  {
+    this->m_duration = m_duration;
+  }
+  [[nodiscard]] double m_influence_range() const
+  {
+    return m_influenceRange;
+  }
+  void set_m_influence_range(double m_influence_range)
+  {
+    m_influenceRange = m_influence_range;
   }
   // Register this type，包含一些元数据
   static TypeId GetTypeId();

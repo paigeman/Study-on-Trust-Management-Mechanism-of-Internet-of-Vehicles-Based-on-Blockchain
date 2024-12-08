@@ -26,7 +26,8 @@ uint32_t RandomEvent::GetSerializedSize() const
     // Size of the string length is 8 bytes
     // m_trueValue is 8 bytes 避免不同平台实现不同
     // m_duration is 8 bytes
-    return 4 + 8 * 3 + 8 + 8 + this->m_description.size() + 8 + 8;
+    // m_influenceRange is 8 bytes
+    return 4 + 8 * 3 + 8 + 8 + this->m_description.size() + 8 + 8 + 8;
 }
 
 void
@@ -41,6 +42,7 @@ RandomEvent::Serialize(Buffer::Iterator start) const
     start.Write(reinterpret_cast<const uint8_t *>(this->m_description.c_str()), this->m_description.size());
     start.WriteHtonU64(this->m_trueValue);
     start.WriteHtonU64(static_cast<const uint64_t>((this->m_duration.GetNanoSeconds())));
+    start.WriteHtonU64(*reinterpret_cast<const uint64_t*>(&(this->m_influenceRange)));
 }
 
 uint32_t RandomEvent::Deserialize(Buffer::Iterator start)
@@ -61,6 +63,8 @@ uint32_t RandomEvent::Deserialize(Buffer::Iterator start)
     this->m_description = std::string(buffer);
     this->m_trueValue = static_cast<bool>(i.ReadNtohU64());
     this->m_duration = NanoSeconds(i.ReadNtohU64());
+    const uint64_t influenceRange = i.ReadNtohU64();
+    this->m_influenceRange = *reinterpret_cast<const double*>(&influenceRange);
     return i.GetDistanceFrom(start);
 }
 
@@ -71,7 +75,8 @@ void RandomEvent::Print(std::ostream& os) const
        << "Timestamp: " << this->m_timestamp << "\n"
        << "Description: " << this->m_description << "\n"
        << "TrueValue: " << this->m_trueValue << "\n"
-       << "Duration: " << this->m_duration << "\n";
+       << "Duration: " << this->m_duration << "\n"
+       << "InfluenceRange: " << this->m_influenceRange << "\n";
 }
 
 RandomEvent::RandomEvent(const uint32_t m_event_id,
@@ -79,10 +84,12 @@ RandomEvent::RandomEvent(const uint32_t m_event_id,
                 const Time& m_timestamp,
                 const std::string& m_description,
                 const bool m_true_value,
-                const Time& m_duration)
+                const Time& m_duration,
+                const double m_influenceRange)
         : m_eventId(m_event_id),
           m_eventLocation(m_event_location),
           m_timestamp(m_timestamp),
           m_description(m_description),
           m_trueValue(m_true_value),
-          m_duration(m_duration) {}
+          m_duration(m_duration),
+          m_influenceRange(m_influenceRange) {}

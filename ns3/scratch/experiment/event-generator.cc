@@ -28,8 +28,9 @@ void EventGenerator::GenerateEvents(){
         oss << timestamp << ": Event #" << eventId << " at " << eventLocation;
         std::string description = oss.str();
         Time duration = Seconds(this->m_randomTime->GetValue());
+        double range = this->m_randomRange->GetValue();
         RandomEvent randomEvent(eventId,
-            eventLocation, timestamp, description, true, duration);
+            eventLocation, timestamp, description, true, duration, range);
         event_manager.AddEvent(randomEvent);
         NS_LOG_DEBUG(description);
     }
@@ -59,6 +60,10 @@ EventGenerator::EventGenerator(const double m_x_min,
     this->m_randomTime->SetAttribute("Min", DoubleValue(0));
     // 事件的持续时间 最多1周 可调整 3600 * 24 * 7 = 604800s
     this->m_randomTime->SetAttribute("Max", DoubleValue(604800));
+    // 影响范围，默认100，可调整
+    this->m_randomRange = CreateObject<UniformRandomVariable>();
+    this->m_randomRange->SetAttribute("Min", DoubleValue(0));
+    this->m_randomRange->SetAttribute("Max", DoubleValue(100));
 }
 
 void EventGenerator::StartApplication(){
