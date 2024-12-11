@@ -32,6 +32,7 @@ class EventGenerator : public Application
   EventId m_eventId;
   void StartApplication() override;
   void StopApplication() override;
+  void ScheduleEvent();
 public:
   // Register this type，包含一些元数据
   static TypeId GetTypeId();
@@ -43,7 +44,6 @@ public:
                    double m_y_max,
                    uint32_t m_max_events_per_second,
                    const Time& m_delay);
-  void ScheduleEvent();
 };
 }
 #endif //EVENT_GENERATOR_H

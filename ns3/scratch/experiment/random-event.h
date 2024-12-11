@@ -7,6 +7,7 @@
 #include "ns3/header.h"
 #include "ns3/vector.h"
 #include "ns3/nstime.h"
+#include <atomic>
 
 namespace ns3
 {
@@ -37,29 +38,29 @@ public:
                 const Time& m_duration,
                 double m_influenceRange);
   // getter and setter
-  [[nodiscard]] uint32_t m_event_id() const
+  [[nodiscard]] uint32_t GetEventId() const
   {
-    return m_eventId;
+    return this->m_eventId;
   }
-  void set_m_event_id(const uint32_t m_event_id)
+  void setEventId(const uint32_t eventId)
   {
-    m_eventId = m_event_id;
+    this->m_eventId = eventId;
   }
-  [[nodiscard]] Vector m_event_location() const
+  [[nodiscard]] Vector GetEventLocation() const
   {
-    return m_eventLocation;
+    return this->m_eventLocation;
   }
-  void set_m_event_location(const Vector& m_event_location)
+  void setEventLocation(const Vector& eventLocation)
   {
-    m_eventLocation = m_event_location;
+    m_eventLocation = eventLocation;
   }
-  [[nodiscard]] Time m_timestamp1() const
+  [[nodiscard]] Time GetTimestamp() const
   {
-    return m_timestamp;
+    return this->m_timestamp;
   }
-  void set_m_timestamp(const Time& m_timestamp)
+  void setTimestamp(const Time& timestamp)
   {
-    this->m_timestamp = m_timestamp;
+    this->m_timestamp = timestamp;
   }
   [[nodiscard]] std::string GetDescription() const
   {
@@ -77,21 +78,21 @@ public:
   {
     m_trueValue = m_true_value;
   }
-  [[nodiscard]] Time m_duration1() const
+  [[nodiscard]] Time GetDuration() const
   {
-    return m_duration;
+    return this->m_duration;
   }
-  void set_m_duration(const Time& m_duration)
+  void setDuration(const Time& duration)
   {
-    this->m_duration = m_duration;
+    this->m_duration = duration;
   }
-  [[nodiscard]] double m_influence_range() const
+  [[nodiscard]] double GetInfluenceRange() const
   {
-    return m_influenceRange;
+    return this->m_influenceRange;
   }
-  void set_m_influence_range(double m_influence_range)
+  void setInfluenceRange(double influenceRange)
   {
-    m_influenceRange = m_influence_range;
+    m_influenceRange = influenceRange;
   }
   // Register this type，包含一些元数据
   static TypeId GetTypeId();

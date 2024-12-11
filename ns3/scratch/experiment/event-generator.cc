@@ -58,8 +58,8 @@ EventGenerator::EventGenerator(const double m_x_min,
     this->m_randomY->SetAttribute("Max", DoubleValue(m_y_max));
     this->m_randomTime = CreateObject<UniformRandomVariable>();
     this->m_randomTime->SetAttribute("Min", DoubleValue(0));
-    // 事件的持续时间 最多1周 可调整 3600 * 24 * 7 = 604800s
-    this->m_randomTime->SetAttribute("Max", DoubleValue(604800));
+    // 事件的持续时间 最多2000s 可调整
+    this->m_randomTime->SetAttribute("Max", DoubleValue(2000));
     // 影响范围，默认100，可调整
     this->m_randomRange = CreateObject<UniformRandomVariable>();
     this->m_randomRange->SetAttribute("Min", DoubleValue(0));
@@ -72,9 +72,9 @@ void EventGenerator::StartApplication(){
 
 void EventGenerator::StopApplication()
 {
-    if (m_eventId.IsPending())
+    if (this->m_eventId.IsPending())
     {
-        Simulator::Cancel(m_eventId);
+        Simulator::Cancel(this->m_eventId);
     }
 }
 

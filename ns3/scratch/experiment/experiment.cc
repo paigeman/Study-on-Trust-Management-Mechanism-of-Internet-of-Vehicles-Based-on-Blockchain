@@ -260,6 +260,24 @@ main(int argc, char* argv[])
     eventGenerator->SetStartTime(Seconds(start));
     eventGenerator->SetStopTime(Seconds(duration));
 
+    // 车辆应用
+    // for (uint32_t i = 0; i < nodeNum; i++)
+    // {
+        Ptr<VehicleApp> vehicleApp = CreateObject<VehicleApp>(8080, rsuNodes, 8080, Seconds(1));
+        stas.Get(0)->AddApplication(vehicleApp);
+        vehicleApp->SetStartTime(Seconds(start));
+        vehicleApp->SetStopTime(Seconds(duration));
+    // }
+
+    // RSU应用
+    for (int i = 0; i < rsuNum; ++i)
+    {
+        Ptr<RsuApp> rsuApp = CreateObject<RsuApp>(8080);
+        rsuNodes.Get(i)->AddApplication(rsuApp);
+        rsuApp->SetStartTime(Seconds(start));
+        rsuApp->SetStopTime(Seconds(duration));
+    }
+
     Simulator::Stop(Seconds(duration));
     Simulator::Run();
     Simulator::Destroy();

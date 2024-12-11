@@ -6,6 +6,7 @@
 #define EVENT_MANAGER_H
 #include "random-event.h"
 #include "vector"
+#include "mutex"
 
 namespace ns3
 {
@@ -13,6 +14,10 @@ namespace ns3
 class EventManager
 {
   std::vector<RandomEvent> m_events;
+  std::unordered_map<uint32_t, RandomEvent> m_eventsMap;
+  mutable std::recursive_mutex m_mapMutex;
+  mutable std::recursive_mutex m_vectorMutex;
+  void removeExpiredEvents(std::vector<uint32_t> & set);
 public:
   void AddEvent(const RandomEvent& event);
   EventManager();
@@ -22,6 +27,8 @@ public:
     static EventManager instance;
     return instance;
   }
+  // 获取所有未过期的事件
+  std::vector<RandomEvent> GetAllLiveEvents();
 };
 
 }
