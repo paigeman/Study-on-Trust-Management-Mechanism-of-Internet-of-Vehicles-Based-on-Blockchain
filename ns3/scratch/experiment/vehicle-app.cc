@@ -27,8 +27,21 @@ void VehicleApp::StartApplication()
     this->m_serverSocket = Socket::CreateSocket(GetNode(), UdpSocketFactory::GetTypeId());
     // 地址可改为车辆的IP地址
     const auto local = InetSocketAddress(Ipv4Address::GetAny(), this->m_serverPort);
-    this->m_serverSocket->Bind(local);
+    if (this->m_serverSocket->Bind(local))
+    {
+        NS_FATAL_ERROR("Failed to bind socket");
+    }
     this->m_serverSocket->SetRecvCallback(MakeCallback(&VehicleApp::HandleRead, this));
+    // this->m_clientSocket = Socket::CreateSocket(GetNode(), UdpSocketFactory::GetTypeId());
+    // if (m_clientSocket->Bind() == -1)
+    // {
+    //     NS_FATAL_ERROR("Failed to bind socket");
+    // }
+    // auto rsu = this->GetTargetRSU();
+    // const Ipv4Address remoteAddress = GetTargetRSUAddress(rsu);
+    // const InetSocketAddress remote(remoteAddress, this->m_rsuServerPort);
+    // m_clientSocket->Connect(remote);
+    // m_clientSocket->SetAllowBroadcast(true);
     this->ScheduleEvent();
 }
 
@@ -102,17 +115,21 @@ void VehicleApp::SentMessageToRSU(const Vector & position, const RandomEvent& ra
     auto rsu = this->GetTargetRSU();
     const Ipv4Address remoteAddress = GetTargetRSUAddress(rsu);
     const InetSocketAddress remote(remoteAddress, this->m_rsuServerPort);
-    const EventMessage eventMessage(EventMessage::GenerateId(), position, Simulator::Now(), randomEvent);
+    const EventMessage eventMessage(GetNode()->GetId(), EventMessage::GenerateId(), position, Simulator::Now(), randomEvent);
     // 创建要发送的包
     Ptr<Packet> packet = Create<Packet>();
     // 把header添加进包里
     packet->AddHeader(eventMessage);
     // 发送给RSU
     socket->SendTo(packet, 0, remote);
+    // this->m_clientSocket->SendTo(packet, 0, remote);
+    // socket->Connect(remote);
+    // socket->Send(packet);
+    // this->m_clientSocket->Send(packet);
     std::ostringstream oss;
     oss << Simulator::Now() << ": " << "Vehicle #" << GetNode()->GetId()
         << " from " << GetNode()->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal()
-        << " sent package to RSU #" << rsu->GetId() << " at " << remoteAddress;
+        << " sent a package to RSU #" << rsu->GetId() << " at " << remoteAddress;
     NS_LOG_DEBUG(oss.str());
     socket->Close();
 }

@@ -20,15 +20,17 @@ EventMessage::GetInstanceTypeId() const
 
 uint32_t EventMessage::GetSerializedSize() const
 {
+    // m_vehicleId is 4 bytes
     // m_messageId is 4 bytes
     // one Vector has three double, we have two Vectors
     // the last 8 bytes is for m_timestamp
-    return 4 + 8 * 3 + 8 + this->m_randomEvent.GetSerializedSize();
+    return 4 + 4 + 8 * 3 + 8 + this->m_randomEvent.GetSerializedSize();
 }
 
 void
 EventMessage::Serialize(Buffer::Iterator start) const
 {
+    start.WriteHtonU32(this->m_vehicleId);
     start.WriteHtonU32(this->m_messageId);
     start.WriteHtonU64(*reinterpret_cast<const uint64_t*>(&(this->m_reporterLocation.x)));
     start.WriteHtonU64(*reinterpret_cast<const uint64_t*>(&(this->m_reporterLocation.y)));
@@ -40,6 +42,7 @@ EventMessage::Serialize(Buffer::Iterator start) const
 uint32_t EventMessage::Deserialize(Buffer::Iterator start)
 {
     Buffer::Iterator i = start;
+    this->m_vehicleId = i.ReadNtohU32();
     this->m_messageId = i.ReadNtohU32();
     const uint64_t reporterLocationX = i.ReadNtohU64();
     const uint64_t reporterLocationY = i.ReadNtohU64();
@@ -52,11 +55,13 @@ uint32_t EventMessage::Deserialize(Buffer::Iterator start)
     return i.GetDistanceFrom(start);
 }
 
-EventMessage::EventMessage(const uint32_t m_message_id,
+EventMessage::EventMessage(const uint32_t vehicleId,
+                 const uint32_t m_message_id,
                  const Vector& m_reporter_location,
                  const Time& m_timestamp,
                  const RandomEvent& randomEvent)
-        : m_messageId(m_message_id),
+        : m_vehicleId(vehicleId),
+          m_messageId(m_message_id),
           m_reporterLocation(m_reporter_location),
           m_timestamp(m_timestamp),
           m_randomEvent(randomEvent)
@@ -65,7 +70,8 @@ EventMessage::EventMessage(const uint32_t m_message_id,
 
 void EventMessage::Print (std::ostream& os) const
 {
-    os << "MessageId: " << this->m_messageId << "\n"
+    os << "VehicleId: " << m_vehicleId << "\n"
+       << "MessageId: " << this->m_messageId << "\n"
        << "ReporterLocation: " << this->m_reporterLocation << "\n"
        << "Timestamp: " << this->m_timestamp << "\n"
        << "RandomEvent: " << this->m_randomEvent << "\n";

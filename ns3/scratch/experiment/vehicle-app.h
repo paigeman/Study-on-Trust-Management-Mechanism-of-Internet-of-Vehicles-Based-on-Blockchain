@@ -24,6 +24,8 @@ class VehicleApp : public Application
   uint16_t m_serverPort;
   // 服务端socket
   Ptr<Socket> m_serverSocket;
+  // 发送的socket
+  // Ptr<Socket> m_clientSocket;
   // 所有感知到的事件id
   std::unordered_set<uint32_t> m_detectedEventIds;
   // 调度器事件的id

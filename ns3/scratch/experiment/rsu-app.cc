@@ -3,7 +3,12 @@
 //
 #include "rsu-app.h"
 #include "ns3/udp-socket-factory.h"
+#include "ns3/simulator.h"
+#include "ns3/ipv4.h"
+#include "event-message.h"
 using namespace ns3;
+
+NS_LOG_COMPONENT_DEFINE ("RsuApp");
 
 TypeId RsuApp::GetTypeId()
 {
@@ -16,7 +21,10 @@ void RsuApp::StartApplication()
 {
     this->m_serverSocket = Socket::CreateSocket(GetNode(), UdpSocketFactory::GetTypeId());
     const auto local = InetSocketAddress(Ipv4Address::GetAny(), this->m_serverPort);
-    this->m_serverSocket->Bind(local);
+    if (this->m_serverSocket->Bind(local))
+    {
+        NS_FATAL_ERROR("Failed to bind socket");
+    }
     this->m_serverSocket->SetRecvCallback(MakeCallback(&RsuApp::HandleRead, this));
 }
 
@@ -39,6 +47,10 @@ void RsuApp::HandleRead(Ptr<Socket> socket)
     Ptr<Packet> packet = socket->RecvFrom(from);
     if (packet)
     {
-
+        std::ostringstream oss;
+        oss << Simulator::Now() << ": RSU #" << GetNode()->GetId()
+            << " at " << GetNode()->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal()
+            << " received a package from Vehicle # at " << from;
+        NS_LOG_DEBUG(oss.str());
     }
 }

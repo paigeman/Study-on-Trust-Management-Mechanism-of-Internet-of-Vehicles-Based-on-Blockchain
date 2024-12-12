@@ -10,6 +10,8 @@ namespace ns3 {
 
 // 事件消息
 class EventMessage : public Header {
+  // 车辆id
+  uint32_t m_vehicleId;
   // 消息编号
   uint32_t m_messageId;
   // 消息类型 todo
@@ -21,7 +23,8 @@ class EventMessage : public Header {
   RandomEvent m_randomEvent;
 public:
   // constructor
-  EventMessage(uint32_t m_message_id,
+  EventMessage(uint32_t vehicleId,
+                 uint32_t m_message_id,
                  const Vector& m_reporter_location,
                  const Time& m_timestamp,
                  const RandomEvent& randomEvent);

@@ -1,15 +1,15 @@
 #include "event-generator.h"
 #include "event-manager.h"
-#include "event-message.h"
 #include "filesystem"
+#include "rsu-app.h"
+#include "vehicle-app.h"
 
+#include "ns3/ssid.h"
 #include "ns3/core-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/ns2-mobility-helper.h"
 #include "ns3/yans-wifi-helper.h"
-#include "vehicle-app.h"
-#include "rsu-app.h"
 
 #include <sstream>
 
@@ -93,13 +93,19 @@ static void OutputRsuLocation(const NodeContainer & rsuNodes)
 }
 
 // 获取子网掩码
-static uint32_t getMask(uint32_t num)
-{
-    // +2 for network and broadcast addresses
-    const auto subnetSize = static_cast<uint32_t>(std::ceil(std::log2(num + 2)));
-    return (0xFFFFFFFF << subnetSize) & 0xFFFFFFFF;
-}
+// static uint32_t getMask(uint32_t num)
+// {
+//     // +2 for network and broadcast addresses
+//     const auto subnetSize = static_cast<uint32_t>(std::ceil(std::log2(num + 2)));
+//     return (0xFFFFFFFF << subnetSize) & 0xFFFFFFFF;
+// }
 
+// run with:
+// * environments: NS_LOG=experiment=debug:EventGenerator=debug:VehicleApp=debug:RsuApp=debug
+// * program args:
+// --traceFile=E:\GitHub\ns-3-dev-git\scratch\experiment\area1ns2mobility.tcl
+// --configFile=E:\GitHub\ns-3-dev-git\scratch\experiment\area1ns2config.tcl
+// --rsuNum=4
 int
 main(int argc, char* argv[])
 {
@@ -231,8 +237,11 @@ main(int argc, char* argv[])
     phy.SetChannel(channel.Create());
     // 数据链路层
     WifiMacHelper mac;
+    // Ssid ssid = Ssid("ns-3-ssid");
     WifiHelper wifi;
+    // mac.SetType("ns3::StaWifiMac", "Ssid", SsidValue(ssid), "ActiveProbing", BooleanValue(false));
     NetDeviceContainer vehicleDevices = wifi.Install(phy, mac, stas);
+    // mac.SetType("ns3::ApWifiMac", "Ssid", SsidValue(ssid));
     NetDeviceContainer rsuDevices = wifi.Install(phy, mac, rsuNodes);
     // 网络层
     InternetStackHelper stack;
@@ -240,10 +249,11 @@ main(int argc, char* argv[])
     stack.Install(rsuNodes);
     // 分配IP地址 一般来说够了
     Ipv4AddressHelper address;
-    Ipv4Mask maskObj(getMask(nodeNum + static_cast<uint32_t>(rsuNum)));
-    Ipv4Address baseIp("10.1.1.0");
-    Ipv4Address network(baseIp.Get() & maskObj.Get());
-    address.SetBase(network, maskObj);
+    // Ipv4Mask maskObj(getMask(nodeNum + static_cast<uint32_t>(rsuNum)));
+    // Ipv4Address baseIp("10.1.1.0");
+    // Ipv4Address network(baseIp.Get() & maskObj.Get());
+    // address.SetBase(network, maskObj);
+    address.SetBase("10.1.0.0", "255.255.0.0");
     address.Assign(vehicleDevices);
     address.Assign(rsuDevices);
     Ipv4GlobalRoutingHelper::PopulateRoutingTables();
@@ -260,10 +270,13 @@ main(int argc, char* argv[])
     eventGenerator->SetStartTime(Seconds(start));
     eventGenerator->SetStopTime(Seconds(duration));
 
+    uint16_t rsuServerPort = 8080;
+    uint16_t vehicleServerPort = 8081;
+
     // 车辆应用
     // for (uint32_t i = 0; i < nodeNum; i++)
     // {
-        Ptr<VehicleApp> vehicleApp = CreateObject<VehicleApp>(8080, rsuNodes, 8080, Seconds(1));
+        Ptr<VehicleApp> vehicleApp = CreateObject<VehicleApp>(rsuServerPort, rsuNodes, vehicleServerPort, Seconds(1));
         stas.Get(0)->AddApplication(vehicleApp);
         vehicleApp->SetStartTime(Seconds(start));
         vehicleApp->SetStopTime(Seconds(duration));
@@ -272,11 +285,15 @@ main(int argc, char* argv[])
     // RSU应用
     for (int i = 0; i < rsuNum; ++i)
     {
-        Ptr<RsuApp> rsuApp = CreateObject<RsuApp>(8080);
+        Ptr<RsuApp> rsuApp = CreateObject<RsuApp>(rsuServerPort);
         rsuNodes.Get(i)->AddApplication(rsuApp);
         rsuApp->SetStartTime(Seconds(start));
         rsuApp->SetStopTime(Seconds(duration));
     }
+
+    phy.SetPcapDataLinkType(WifiPhyHelper::DLT_IEEE802_11_RADIO);
+    phy.EnablePcap("experiment", vehicleDevices.Get(0));
+    phy.EnablePcap("experiment", rsuDevices.Get(0));
 
     Simulator::Stop(Seconds(duration));
     Simulator::Run();
